@@ -10,4 +10,8 @@
     <ProjectReference Include="..\SchoolActivities.Data\SchoolActivities.Data.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Services\Implementation\" />
+  </ItemGroup>
+
 </Project>
