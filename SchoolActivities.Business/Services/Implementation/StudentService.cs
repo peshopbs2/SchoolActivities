@@ -1,4 +1,5 @@
-﻿using SchoolActivities.Business.Repositories.Interfaces;
+﻿using Microsoft.EntityFrameworkCore;
+using SchoolActivities.Business.Repositories.Interfaces;
 using SchoolActivities.Business.Services.Interfaces;
 using SchoolActivities.Models.Domain.Entities;
 using SchoolActivities.Models.Dtos.Student;
@@ -28,7 +29,7 @@ namespace SchoolActivities.Business.Services.Implementation
             await _studentRepository.AddAsync(student).ConfigureAwait(false);
             await _studentRepository.CommitAsync().ConfigureAwait(false);
 
-            return MapToResponseDto(student);
+            return await GetByIdAsync(student.Id).ConfigureAwait(false);
         }
 
         public async Task DeleteAsync(Guid studentId)
@@ -46,14 +47,24 @@ namespace SchoolActivities.Business.Services.Implementation
 
         public async Task<IEnumerable<StudentResponseDto>> GetAllAsync()
         {
-            IEnumerable<Student> students = await _studentRepository.GetAllAsync().ConfigureAwait(false);
+            List<Student> students = await _studentRepository
+                .Query()
+                .Include(s => s.Enrollments)
+                .ThenInclude(e => e.Activity)
+                .ToListAsync()
+                .ConfigureAwait(false);
 
             return students.Select(MapToResponseDto);
         }
 
         public async Task<StudentResponseDto> GetByIdAsync(Guid studentId)
         {
-            Student? student = await _studentRepository.GetByIdAsync(studentId).ConfigureAwait(false);
+            Student? student = await _studentRepository
+                .Query()
+                .Include(s => s.Enrollments)
+                .ThenInclude(e => e.Activity)
+                .FirstOrDefaultAsync(s => s.Id == studentId)
+                .ConfigureAwait(false);
 
             if (student is null)
             {
@@ -67,7 +78,12 @@ namespace SchoolActivities.Business.Services.Implementation
         {
             ArgumentNullException.ThrowIfNull(dto);
 
-            Student? student = await _studentRepository.GetByIdAsync(studentId).ConfigureAwait(false);
+            Student? student = await _studentRepository
+                .Query()
+                .Include(s => s.Enrollments)
+                .ThenInclude(e => e.Activity)
+                .FirstOrDefaultAsync(s => s.Id == studentId)
+                .ConfigureAwait(false);
 
             if (student is null)
             {
@@ -89,7 +105,14 @@ namespace SchoolActivities.Business.Services.Implementation
             {
                 Id = student.Id,
                 FirstName = student.FirstName,
-                LastName = student.LastName
+                LastName = student.LastName,
+                Enrollments = student.Enrollments.Select(e => new StudentEnrollmentResponseDto
+                {
+                    ActivityId = e.ActivityId,
+                    ActivityName = e.Activity?.Name ?? string.Empty,
+                    EnrolledAtUtc = e.EnrolledAtUtc,
+                    IsActive = e.IsActive
+                }).ToList()
             };
         }
     }
