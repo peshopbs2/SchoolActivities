@@ -1,4 +1,9 @@
 using Microsoft.EntityFrameworkCore;
+using NuGet.Protocol.Core.Types;
+using SchoolActivities.Business.Repositories.Implementation;
+using SchoolActivities.Business.Repositories.Interfaces;
+using SchoolActivities.Business.Services.Implementation;
+using SchoolActivities.Business.Services.Interfaces;
 using SchoolActivities.Data.Persistance;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -9,6 +14,9 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
     options.UseSqlServer(connectionString);
 });
+
+builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+builder.Services.AddScoped<IStudentService, StudentService>();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
